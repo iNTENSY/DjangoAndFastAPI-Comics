@@ -1,7 +1,4 @@
 from pydantic import BaseModel
-from sqlalchemy.orm import Relationship
-
-from schemas.users.schema import Users
 
 
 class Comics(BaseModel):
