@@ -5,7 +5,7 @@
 git clone https://github.com/iNTENSY/test_comics.git
 ```
 ```
-cd .\comics\fastapi\
+cd .\comics\django\
 ```
 Cоздайте и активируйте виртуальное окружение
 ```
@@ -16,26 +16,32 @@ python -m venv venv # Для Windows
 venv/Scripts/activate # Для Windows
 source venv/bin/activate # Для Linux и macOS
 ```
-Установите зависимости из файла `requirements.txt`
+Установите зависимости из файла requirements.txt
 ```
 pip install -r requirements.txt
 ```
-Создайте файл `.env`, в котором укажете свои переменные окружения <br>
-(Примечание: пример `.env` файла указать в `.env_example`)
-
-Примените миграции к вашей базе данных с помощью `alembic`
+Перейдите в папку со скриптом управления и выполните миграции
 ```
-alembic upgrade head
+cd core
+python manage.py migrate
 ```
-Для запуска сервера вам потребуется запустить файл `app.py`, 
-который в свою очередь находится в каталоге `src`.
+Запустить проект
+```
+python manage.py runserver
+```
 
+### Запуск тестов
+
+В проекте имеются тесты, чтобы запустить их напишите в командную строку:
+```python
+pytest
+```
 ***
 ## Полная документация к API проекта:
 
 Перечень запросов к ресурсу можно посмотреть в описании API
 
 ```
-http://127.0.0.1:8000/docs/
+http://127.0.0.1:8000/swagger/
 http://127.0.0.1:8000/redoc/
 ```
