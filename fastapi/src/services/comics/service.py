@@ -1,41 +1,66 @@
+from fastapi import HTTPException, Depends
+from sqlalchemy import select, insert
 from sqlalchemy.exc import NoResultFound
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
-from schemas.comics.schema import Ratings
-from services.database.models import (
+from src.schemas.comics.schema import Ratings, Comics
+from src.services.database.core import get_async_session
+from src.services.database.models import (
     Ratings as RatingsModel,
     Comics as ComicsModel, update_comics_rating
 )
 
 
-def create_rating(data: Ratings, db: Session):
+async def create_rating(data: Ratings, session: AsyncSession):
     if not (1 <= data.value <= 5):
         return {'error': 'Value can be from 1 to 5.'}
 
     try:
-        obj = db.query(RatingsModel).filter(
-            RatingsModel.user_id == data.user_id, RatingsModel.comics_id == data.comics_id
-        ).first()
+        query = select(RatingsModel).where(RatingsModel.user_id == data.user_id, RatingsModel.comics_id == data.comics_id)
+        result = await session.execute(query)
+        obj = result.first()[0]
         obj.value = data.value
-    except Exception:
-        obj = RatingsModel(comics_id=data.comics_id, user_id=data.user_id, value=data.value)
-        db.add(obj)
-
-    db.commit()
-    db.refresh(obj)
-    update_comics_rating(obj, db)
+    except (Exception, NoResultFound):
+        query = insert(RatingsModel).values(comics_id=data.comics_id,
+                                            user_id=data.user_id,
+                                            value=data.value)
+        result = await session.execute(query)
+        obj = result.scalar_one()
+        print(obj)
+    finally:
+        await session.commit()
+    await update_comics_rating(obj, session)
     return obj
 
 
-def get_comics(id: int, db: Session):
+async def get_comics(id: int, session: AsyncSession):
     try:
-        obj = db.query(ComicsModel).filter(ComicsModel.id == id).first()
-    except NoResultFound:
-        return {'error': 'object not found'}
+        query = select(ComicsModel).where(ComicsModel.id == id)
+        result = await session.execute(query)
+    except Exception:
+        raise HTTPException(status_code=500, detail={
+            'status': 'error'
+        })
+    return result.scalars().all()
 
-    return obj
+
+async def get_all_comics(session: AsyncSession):
+    try:
+        query = select(ComicsModel)
+        result = await session.execute(query)
+    except Exception:
+        raise HTTPException(status_code=500)
+
+    return result.scalars().all()
 
 
-def get_comics_rating(id: int, db: Session):
-    obj = get_comics(id, db)
-    return {'value': obj.rating}
+async def get_comics_rating(id: int, session: AsyncSession):
+    try:
+        query = select(ComicsModel).where(ComicsModel.id == id)
+        result = await session.execute(query)
+    except Exception:
+        raise HTTPException(status_code=500, detail={
+            'status': 'error'
+        })
+    return {'value': result.first()[0].rating}

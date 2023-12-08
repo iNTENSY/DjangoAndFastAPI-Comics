@@ -1,6 +1,2 @@
-from fastapi.testclient import TestClient
-
-from app import app
-
-
-client = TestClient(app)
+def test_first():
+    assert 1 == 1

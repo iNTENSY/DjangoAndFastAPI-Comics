@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Float
+from sqlalchemy import Column, Integer, String, ForeignKey, Float, select, text
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship, Session
 
@@ -32,10 +33,15 @@ class Ratings(Base):
     value = Column(Integer)
 
 
-def update_comics_rating(instance, db: Session):
-    comics = db.query(Comics).filter(Comics.id == instance.comics_id).first()
-    avg_rating = db.query(func.avg(Ratings.value)).filter(Comics.id == instance.comics_id).first()
-    comics.rating = avg_rating[0]
-    db.commit()
-    db.refresh(comics)
+async def update_comics_rating(instance, session: AsyncSession):
+    query = select(Comics).where(Comics.id == instance.comics_id)
+    result = await session.execute(query)
+    comics = result.first()[0]
+
+    avg_query = text('SELECT AVG(ratings.value) FROM ratings')
+    result = await session.execute(avg_query)
+    avg = result.scalar_one()
+    comics.rating = avg
+
+    await session.commit()
 
