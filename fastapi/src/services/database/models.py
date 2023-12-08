@@ -34,8 +34,8 @@ class Ratings(Base):
 
 def update_comics_rating(instance, db: Session):
     comics = db.query(Comics).filter(Comics.id == instance.comics_id).first()
-    avg_rating = db.query(func.avg(Ratings.value)).filter(Comics.id == instance.comics_id).first()[0]
-    comics.rating = avg_rating
+    avg_rating = db.query(func.avg(Ratings.value)).filter(Comics.id == instance.comics_id).first()
+    comics.rating = avg_rating[0]
     db.commit()
     db.refresh(comics)
 
